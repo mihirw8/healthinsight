@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String?
+  dateOfBirth   DateTime?
+  sex           String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  healthReports HealthReport[]
+  symptoms      Symptom[]
+  medications   Medication[]
+}
+
+model HealthReport {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  reportType     String
+  collectionDate DateTime
+  provider       String?
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  biomarkers     BiomarkerValue[]
+}
+
+model BiomarkerValue {
+  id             String       @id @default(uuid())
+  healthReportId String
+  healthReport   HealthReport @relation(fields: [healthReportId], references: [id])
+  biomarkerId    String
+  biomarker      Biomarker    @relation(fields: [biomarkerId], references: [id])
+  value          Float
+  unit           String
+  referenceMin   Float?
+  referenceMax   Float?
+  isAbnormal     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Biomarker {
+  id              String           @id @default(uuid())
+  code            String           @unique
+  name            String
+  description     String?
+  category        String
+  unit            String
+  defaultMinRange Float?
+  defaultMaxRange Float?
+  values          BiomarkerValue[]
+  correlations    Correlation[]
+}
+
+model Symptom {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  name        String
+  severity    Int
+  startDate   DateTime
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  correlations Correlation[]
+}
+
+model Medication {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  dosage    String?
+  frequency String?
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Correlation {
+  id          String    @id @default(uuid())
+  biomarkerId String
+  biomarker   Biomarker @relation(fields: [biomarkerId], references: [id])
+  symptomId   String
+  symptom     Symptom   @relation(fields: [symptomId], references: [id])
+  strength    Float
+  direction   String
+  confidence  Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RiskAssessment {
+  id          String   @id @default(uuid())
+  userId      String
+  riskType    String
+  score       Float
+  confidence  Float
+  factors     Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Recommendation {
+  id          String   @id @default(uuid())
+  userId      String
+  category    String
+  priority    Int
+  description String
+  rationale   String
+  references  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
